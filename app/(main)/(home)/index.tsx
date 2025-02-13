@@ -48,7 +48,6 @@ export default function MealGroupsScreen() {
         )}
         ListEmptyComponent={<Text>Aucun groupe enregistré</Text>} // Message si la liste est vide
       />
-
     </View>
   );
 }
