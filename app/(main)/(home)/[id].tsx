@@ -1,86 +1,88 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { Text, View, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams } from 'expo-router'; // Utiliser useLocalSearchParams
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useSearchParams } from 'expo-router';
 
-export default function GroupDetailScreen() {
-  const [groupDetails, setGroupDetails] = useState<any>(null);
-  const { id } = useSearchParams();  // Récupérer l'ID passé dans l'URL
+type MealGroup = {
+  id: string;
+  name: string;
+  meals: {
+    name: string;
+    calories: number;
+  }[];
+};
+
+const MealGroupDetailScreen = () => {
+  const { id } = useLocalSearchParams(); // Récupérer l'ID du groupe depuis l'URL
+  const [mealGroup, setMealGroup] = useState<MealGroup | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadGroupDetails = async () => {
+    const loadMealGroupDetails = async () => {
       try {
         const savedGroups = await AsyncStorage.getItem('mealGroups');
         if (savedGroups) {
           const groups = JSON.parse(savedGroups);
-          const group = groups.find((g: any) => g.id === id);  // Trouver le groupe avec le bon ID
-          setGroupDetails(group);
+          const group = groups.find((g: MealGroup) => g.id === id);
+          setMealGroup(group || null);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des détails du groupe', error);
+        console.error('Erreur lors de la récupération des détails du groupe de repas :', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     if (id) {
-      loadGroupDetails();
+      loadMealGroupDetails();
     }
   }, [id]);
 
-  if (!groupDetails) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Chargement du groupe...</Text>
-      </View>
-    );
+  if (loading) {
+    return <ActivityIndicator size="large" color="green" />;
+  }
+
+  if (!mealGroup) {
+    return <Text>Groupe de repas non trouvé.</Text>;
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Détails du groupe : {groupDetails.name}</Text>
-      <Text style={styles.subHeader}>Nombre de repas : {groupDetails.meals.length}</Text>
-
+      <Text style={styles.title}>{mealGroup.name}</Text>
       <FlatList
-        data={groupDetails.meals}
+        data={mealGroup.meals}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
           <View style={styles.mealItem}>
-            <Text style={styles.foodName}>{item.label}</Text>
-            <Text>{item.nutrients.ENERC_KCAL} kcal</Text>
+            <Text style={styles.mealName}>{item.name}</Text>
+            <Text>{item.calories} Calories</Text>
           </View>
         )}
-        ListEmptyComponent={<Text>Aucun repas trouvé</Text>}
       />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f9f9f9',
   },
-  header: {
+  title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  subHeader: {
-    fontSize: 18,
-    marginBottom: 20,
-  },
   mealItem: {
     padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    marginVertical: 5,
+    backgroundColor: '#f2f2f2',
+    borderRadius: 8,
   },
-  foodName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 16,
-    textAlign: 'center',
+  mealName: {
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
+
+export default MealGroupDetailScreen;
