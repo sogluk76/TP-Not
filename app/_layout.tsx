@@ -13,6 +13,7 @@ export default function RootLayout() {
     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
       <ClerkLoaded>
         <Slot />
+        
       </ClerkLoaded>
     </ClerkProvider>
   )
